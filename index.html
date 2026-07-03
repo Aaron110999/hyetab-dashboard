@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>혜택탭 활성유저 대시보드</title>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --att:#2a78d6; --ofw:#eb6834; --track:#eeeee9; --good:#0ca30c; --crit:#d03b3b;
+  }
+  :root[data-theme="dark"], @media (prefers-color-scheme: dark){}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+      --att:#3987e5; --ofw:#d95926; --track:#2c2c2a; --good:#0ca30c; --crit:#e66767;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --att:#3987e5; --ofw:#d95926; --track:#2c2c2a; --good:#0ca30c; --crit:#e66767;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 22px 72px}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  h1{font-size:26px;margin:0 0 5px}
+  .sub{color:var(--ink2);font-size:13.5px}
+  .theme-btn{border:1px solid var(--border);background:var(--surface);color:var(--ink2);
+    border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+  h2{font-size:18px;margin:44px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--grid);
+    display:flex;align-items:center;gap:9px}
+  h2 .dot{width:11px;height:11px;border-radius:50%}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:14px;margin-top:20px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+  .tile .v{font-size:34px;font-weight:650;letter-spacing:-.02em}
+  .tile .k{font-size:13.5px;color:var(--muted);margin-top:4px}
+  .tile .note{font-size:12.5px;color:var(--ink2);margin-top:7px}
+  .tile.accent-att{border-left:4px solid var(--att)}
+  .tile.accent-ofw{border-left:4px solid var(--ofw)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
+  .card h3{font-size:16px;margin:0 0 3px}
+  .card .cap{font-size:12.5px;color:var(--muted);margin:0 0 18px}
+  .rows{display:flex;flex-direction:column;gap:13px}
+  .row{display:grid;grid-template-columns:150px 1fr auto;align-items:center;gap:14px;font-size:14.5px}
+  .row .lbl{color:var(--ink2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{background:var(--track);border-radius:6px;height:24px;position:relative;overflow:hidden}
+  .fill{height:100%;border-radius:0 6px 6px 0;transition:filter .12s}
+  .row:hover .fill{filter:brightness(1.08)}
+  .val{font-variant-numeric:tabular-nums;color:var(--ink);min-width:108px;text-align:right;font-size:14.5px}
+  .val .pct{color:var(--muted);font-size:13px}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .ax{fill:var(--muted);font-size:11px}
+  .gridline{stroke:var(--grid);stroke-width:1}
+  .tt{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);
+    font-size:11.5px;padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .08s;
+    white-space:nowrap;z-index:9;transform:translate(-50%,-140%)}
+  .foot{margin-top:40px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--grid);padding-top:16px}
+  .foot b{color:var(--ink2)}
+  .insight{background:color-mix(in srgb,var(--att) 7%,var(--surface));border:1px solid var(--border);
+    border-left:3px solid var(--att);border-radius:10px;padding:12px 15px;font-size:12.5px;color:var(--ink2);margin-bottom:16px}
+  .insight.o{background:color-mix(in srgb,var(--ofw) 8%,var(--surface));border-left-color:var(--ofw)}
+  .insight b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>혜택탭 활성유저 대시보드</h1>
+      <div class="sub" id="meta"></div>
+    </div>
+    <button class="theme-btn" id="themeBtn">🌗 테마</button>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2><span class="dot" style="background:var(--att)"></span>출석체크 — 얼마나 많이 · 어떤 주기로</h2>
+  <div class="insight" id="att-insight"></div>
+  <div class="grid">
+    <div class="card"><h3>주기 세그먼트 <span style="color:var(--muted);font-weight:400">전체 출석회원</span></h3>
+      <p class="cap">회원별 주당 출석일 기준 분류</p><div class="rows" id="segAll"></div></div>
+    <div class="card"><h3>정착 시도 회원의 주기 분포</h3>
+      <p class="cap" id="settledCap"></p><div class="rows" id="segSettled"></div></div>
+    <div class="card"><h3>최근성(활성도)</h3>
+      <p class="cap">데이터 최신시점 대비 마지막 출석 경과일</p><div class="rows" id="recency"></div></div>
+    <div class="card"><h3>주별 출석 이벤트 추이</h3>
+      <p class="cap">주 단위 집계</p><div id="attTrend"></div></div>
+  </div>
+
+  <h2><span class="dot" style="background:var(--ofw)"></span>오퍼월(광고 포인트 지급) — 사용자 수 · 사용량</h2>
+  <div class="insight o" id="ofw-insight"></div>
+  <div class="grid">
+    <div class="card"><h3>사용량 세그먼트 <span style="color:var(--muted);font-weight:400">참여횟수 기준</span></h3>
+      <p class="cap">막대=인원, 우측=해당 세그먼트 포인트 비중</p><div class="rows" id="usageSeg"></div></div>
+    <div class="card"><h3>포인트 집중도(파레토)</h3>
+      <p class="cap">상위 유저 누적 포인트 비중</p><div id="pareto"></div></div>
+    <div class="card" style="grid-column:1/-1"><h3>일별 오퍼월 이벤트 추이</h3>
+      <p class="cap" id="ofwCap"></p><div id="ofwTrend"></div></div>
+  </div>
+
+  <h2><span class="dot" style="background:linear-gradient(90deg,var(--att),var(--ofw))"></span>출석 ∩ 오퍼월 교차</h2>
+  <div class="grid">
+    <div class="card"><h3>사용 그룹</h3><p class="cap">두 기능 사용 여부</p><div class="rows" id="cross"></div></div>
+    <div class="card"><h3>오퍼월 유저의 출석 주기</h3>
+      <p class="cap" id="crossCap"></p><div class="rows" id="crossSeg"></div></div>
+  </div>
+
+  <h2><span class="dot" style="background:var(--att)"></span>서비스 활성화 진단 — 습관화 · 리텐션 · 성장</h2>
+  <div class="insight" id="act-insight"></div>
+  <div class="tiles" id="act-tiles"></div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card"><h3>연속출석 지속률 <span style="color:var(--muted);font-weight:400">streak 생존곡선</span></h3>
+      <p class="cap">출석회원 대비 최대 N일 연속 달성 비율 — 급소는 Day1→2</p><div id="survival"></div></div>
+    <div class="card"><h3>최대 연속출석 분포</h3>
+      <p class="cap">회원별 최대 streak</p><div class="rows" id="streakBuckets"></div></div>
+    <div class="card"><h3>리텐션 커브</h3>
+      <p class="cap" id="retCap"></p><div id="retention"></div></div>
+    <div class="card"><h3>월별 활동회원(MAU) 추이</h3>
+      <p class="cap">월간 포인트 적립 활동 회원 수</p><div id="mau"></div></div>
+    <div class="card"><h3>기능 채택 퍼널</h3>
+      <p class="cap" id="adoptCap"></p><div class="rows" id="adopt"></div></div>
+    <div class="card"><h3>참여 깊이 <span style="color:var(--muted);font-weight:400">활동일수</span></h3>
+      <p class="cap">전체 적립회원의 총 활동일수 분포</p><div class="rows" id="depth"></div></div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="tt" id="tt"></div>
+<script>
+const DATA = {"meta": {"start": "2024-11-19", "end": "2026-07-03 13:00", "days": 590, "events": 959706, "members": 159768}, "att": {"users": 38109, "events": 691896, "oneshot": 27888, "oneshot_pct": 73.2, "daily_core": 1808, "seg_all": [{"label": "매일형(주6~7)", "count": 1992}, {"label": "주3~5회형", "count": 1242}, {"label": "주1~2회형", "count": 1688}, {"label": "산발형(<주1)", "count": 2939}, {"label": "단기관측(<7일·대부분 단발)", "count": 30248}], "n_settled": 7861, "seg_settled": [{"label": "매일형(주6~7)", "count": 1992}, {"label": "주3~5회형", "count": 1242}, {"label": "주1~2회형", "count": 1688}, {"label": "산발형(<주1)", "count": 2939}], "recency": [{"label": "활성(≤7일)", "count": 1808}, {"label": "준활성(8~30일)", "count": 432}, {"label": "휴면(31~90일)", "count": 1258}, {"label": "이탈(>90일)", "count": 34611}], "trend": [{"t": "2024-11-24", "v": 1311}, {"t": "2024-12-01", "v": 2317}, {"t": "2024-12-08", "v": 2477}, {"t": "2024-12-15", "v": 2316}, {"t": "2024-12-22", "v": 2173}, {"t": "2024-12-29", "v": 1966}, {"t": "2025-01-05", "v": 1876}, {"t": "2025-01-12", "v": 1958}, {"t": "2025-01-19", "v": 2011}, {"t": "2025-01-26", "v": 1960}, {"t": "2025-02-02", "v": 1920}, {"t": "2025-02-09", "v": 2150}, {"t": "2025-02-16", "v": 2083}, {"t": "2025-02-23", "v": 1909}, {"t": "2025-03-02", "v": 1926}, {"t": "2025-03-09", "v": 1988}, {"t": "2025-03-16", "v": 2253}, {"t": "2025-03-23", "v": 2208}, {"t": "2025-03-30", "v": 4002}, {"t": "2025-04-06", "v": 4106}, {"t": "2025-04-13", "v": 5209}, {"t": "2025-04-20", "v": 4785}, {"t": "2025-04-27", "v": 4231}, {"t": "2025-05-04", "v": 5161}, {"t": "2025-05-11", "v": 6094}, {"t": "2025-05-18", "v": 6942}, {"t": "2025-05-25", "v": 6940}, {"t": "2025-06-01", "v": 7273}, {"t": "2025-06-08", "v": 6993}, {"t": "2025-06-15", "v": 6983}, {"t": "2025-06-22", "v": 7991}, {"t": "2025-06-29", "v": 7648}, {"t": "2025-07-06", "v": 7362}, {"t": "2025-07-13", "v": 7180}, {"t": "2025-07-20", "v": 7191}, {"t": "2025-07-27", "v": 7212}, {"t": "2025-08-03", "v": 7164}, {"t": "2025-08-10", "v": 7233}, {"t": "2025-08-17", "v": 7383}, {"t": "2025-08-24", "v": 7445}, {"t": "2025-08-31", "v": 7620}, {"t": "2025-09-07", "v": 7757}, {"t": "2025-09-14", "v": 7505}, {"t": "2025-09-21", "v": 7534}, {"t": "2025-09-28", "v": 7482}, {"t": "2025-10-05", "v": 7396}, {"t": "2025-10-12", "v": 7485}, {"t": "2025-10-19", "v": 7687}, {"t": "2025-10-26", "v": 7671}, {"t": "2025-11-02", "v": 7855}, {"t": "2025-11-09", "v": 8220}, {"t": "2025-11-16", "v": 8638}, {"t": "2025-11-23", "v": 8800}, {"t": "2025-11-30", "v": 8886}, {"t": "2025-12-07", "v": 10647}, {"t": "2025-12-14", "v": 12663}, {"t": "2025-12-21", "v": 13556}, {"t": "2025-12-28", "v": 14964}, {"t": "2026-01-04", "v": 16505}, {"t": "2026-01-11", "v": 14595}, {"t": "2026-01-18", "v": 14275}, {"t": "2026-01-25", "v": 14433}, {"t": "2026-02-01", "v": 14476}, {"t": "2026-02-08", "v": 14014}, {"t": "2026-02-15", "v": 13931}, {"t": "2026-02-22", "v": 13458}, {"t": "2026-03-01", "v": 13493}, {"t": "2026-03-08", "v": 13784}, {"t": "2026-03-15", "v": 13633}, {"t": "2026-03-22", "v": 13554}, {"t": "2026-03-29", "v": 13457}, {"t": "2026-04-05", "v": 13780}, {"t": "2026-04-12", "v": 13599}, {"t": "2026-04-19", "v": 13638}, {"t": "2026-04-26", "v": 13635}, {"t": "2026-05-03", "v": 13628}, {"t": "2026-05-10", "v": 13777}, {"t": "2026-05-17", "v": 13169}, {"t": "2026-05-24", "v": 12164}, {"t": "2026-05-31", "v": 11304}, {"t": "2026-06-07", "v": 10835}, {"t": "2026-06-14", "v": 10657}, {"t": "2026-06-21", "v": 10526}, {"t": "2026-06-28", "v": 10034}, {"t": "2026-07-05", "v": 5846}]}, "ofw": {"users": 131, "events": 1036, "points": 71185.0, "start": "2026-05-28", "end": "2026-07-03", "avg_cnt": 7.9, "med_cnt": 3, "max_cnt": 128, "avg_pt": 543, "med_pt": 85, "max_pt": 13609, "penetration": 0.08, "usage_seg": [{"label": "헤비(10회+)", "count": 29, "points": 37931.0}, {"label": "미드(4~9회)", "count": 27, "points": 25798.0}, {"label": "라이트(2~3회)", "count": 28, "points": 3598.0}, {"label": "1회성", "count": 47, "points": 3858.0}], "tot_p": 71185.0, "pareto": [{"x": 0.76, "y": 19.12}, {"x": 1.53, "y": 28.49}, {"x": 2.29, "y": 36.1}, {"x": 3.05, "y": 39.52}, {"x": 3.82, "y": 42.41}, {"x": 4.58, "y": 44.98}, {"x": 5.34, "y": 47.5}, {"x": 6.11, "y": 49.86}, {"x": 6.87, "y": 52.03}, {"x": 7.63, "y": 54.17}, {"x": 8.4, "y": 56.28}, {"x": 9.16, "y": 58.33}, {"x": 9.92, "y": 60.38}, {"x": 10.69, "y": 62.4}, {"x": 11.45, "y": 64.41}, {"x": 12.21, "y": 66.4}, {"x": 12.98, "y": 68.35}, {"x": 13.74, "y": 70.25}, {"x": 14.5, "y": 72.0}, {"x": 15.27, "y": 73.71}, {"x": 16.03, "y": 75.41}, {"x": 16.79, "y": 77.06}, {"x": 17.56, "y": 78.66}, {"x": 18.32, "y": 80.26}, {"x": 19.08, "y": 81.83}, {"x": 19.85, "y": 83.35}, {"x": 20.61, "y": 84.88}, {"x": 21.37, "y": 86.16}, {"x": 22.14, "y": 87.13}, {"x": 22.9, "y": 87.97}, {"x": 23.66, "y": 88.69}, {"x": 24.43, "y": 89.29}, {"x": 25.19, "y": 89.83}, {"x": 25.95, "y": 90.35}, {"x": 26.72, "y": 90.87}, {"x": 27.48, "y": 91.37}, {"x": 28.24, "y": 91.85}, {"x": 29.01, "y": 92.23}, {"x": 29.77, "y": 92.59}, {"x": 30.53, "y": 92.95}, {"x": 31.3, "y": 93.31}, {"x": 32.06, "y": 93.67}, {"x": 32.82, "y": 94.02}, {"x": 33.59, "y": 94.34}, {"x": 34.35, "y": 94.59}, {"x": 35.11, "y": 94.84}, {"x": 35.88, "y": 95.09}, {"x": 36.64, "y": 95.33}, {"x": 37.4, "y": 95.57}, {"x": 38.17, "y": 95.78}, {"x": 38.93, "y": 95.96}, {"x": 39.69, "y": 96.11}, {"x": 40.46, "y": 96.24}, {"x": 41.22, "y": 96.36}, {"x": 41.98, "y": 96.49}, {"x": 42.75, "y": 96.61}, {"x": 43.51, "y": 96.73}, {"x": 44.27, "y": 96.85}, {"x": 45.04, "y": 96.97}, {"x": 45.8, "y": 97.09}, {"x": 46.56, "y": 97.21}, {"x": 47.33, "y": 97.33}, {"x": 48.09, "y": 97.45}, {"x": 48.85, "y": 97.57}, {"x": 49.62, "y": 97.69}, {"x": 50.38, "y": 97.81}, {"x": 51.15, "y": 97.93}, {"x": 51.91, "y": 98.05}, {"x": 52.67, "y": 98.17}, {"x": 53.44, "y": 98.29}, {"x": 54.2, "y": 98.41}, {"x": 54.96, "y": 98.53}, {"x": 55.73, "y": 98.65}, {"x": 56.49, "y": 98.77}, {"x": 57.25, "y": 98.88}, {"x": 58.02, "y": 99.0}, {"x": 58.78, "y": 99.12}, {"x": 59.54, "y": 99.24}, {"x": 60.31, "y": 99.36}, {"x": 61.07, "y": 99.48}, {"x": 61.83, "y": 99.6}, {"x": 62.6, "y": 99.72}, {"x": 63.36, "y": 99.76}, {"x": 64.12, "y": 99.78}, {"x": 64.89, "y": 99.8}, {"x": 65.65, "y": 99.81}, {"x": 66.41, "y": 99.83}, {"x": 67.18, "y": 99.84}, {"x": 67.94, "y": 99.85}, {"x": 68.7, "y": 99.86}, {"x": 69.47, "y": 99.87}, {"x": 70.23, "y": 99.88}, {"x": 70.99, "y": 99.89}, {"x": 71.76, "y": 99.9}, {"x": 72.52, "y": 99.9}, {"x": 73.28, "y": 99.91}, {"x": 74.05, "y": 99.92}, {"x": 74.81, "y": 99.93}, {"x": 75.57, "y": 99.93}, {"x": 76.34, "y": 99.94}, {"x": 77.1, "y": 99.94}, {"x": 77.86, "y": 99.94}, {"x": 78.63, "y": 99.95}, {"x": 79.39, "y": 99.95}, {"x": 80.15, "y": 99.95}, {"x": 80.92, "y": 99.96}, {"x": 81.68, "y": 99.96}, {"x": 82.44, "y": 99.96}, {"x": 83.21, "y": 99.96}, {"x": 83.97, "y": 99.97}, {"x": 84.73, "y": 99.97}, {"x": 85.5, "y": 99.97}, {"x": 86.26, "y": 99.97}, {"x": 87.02, "y": 99.98}, {"x": 87.79, "y": 99.98}, {"x": 88.55, "y": 99.98}, {"x": 89.31, "y": 99.98}, {"x": 90.08, "y": 99.98}, {"x": 90.84, "y": 99.98}, {"x": 91.6, "y": 99.98}, {"x": 92.37, "y": 99.99}, {"x": 93.13, "y": 99.99}, {"x": 93.89, "y": 99.99}, {"x": 94.66, "y": 99.99}, {"x": 95.42, "y": 99.99}, {"x": 96.18, "y": 99.99}, {"x": 96.95, "y": 99.99}, {"x": 97.71, "y": 100.0}, {"x": 98.47, "y": 100.0}, {"x": 99.24, "y": 100.0}, {"x": 100.0, "y": 100.0}], "p_marks": {"0.1": 60.4, "0.2": 83.4, "0.5": 97.7}, "trend": [{"t": "2026-05-28", "v": 5}, {"t": "2026-05-29", "v": 8}, {"t": "2026-06-01", "v": 12}, {"t": "2026-06-02", "v": 7}, {"t": "2026-06-03", "v": 7}, {"t": "2026-06-04", "v": 4}, {"t": "2026-06-05", "v": 9}, {"t": "2026-06-06", "v": 1}, {"t": "2026-06-07", "v": 19}, {"t": "2026-06-08", "v": 4}, {"t": "2026-06-09", "v": 13}, {"t": "2026-06-10", "v": 4}, {"t": "2026-06-11", "v": 11}, {"t": "2026-06-12", "v": 19}, {"t": "2026-06-13", "v": 14}, {"t": "2026-06-14", "v": 14}, {"t": "2026-06-15", "v": 23}, {"t": "2026-06-16", "v": 13}, {"t": "2026-06-17", "v": 22}, {"t": "2026-06-18", "v": 55}, {"t": "2026-06-19", "v": 28}, {"t": "2026-06-20", "v": 36}, {"t": "2026-06-21", "v": 58}, {"t": "2026-06-22", "v": 39}, {"t": "2026-06-23", "v": 44}, {"t": "2026-06-24", "v": 63}, {"t": "2026-06-25", "v": 83}, {"t": "2026-06-26", "v": 53}, {"t": "2026-06-27", "v": 84}, {"t": "2026-06-28", "v": 35}, {"t": "2026-06-29", "v": 56}, {"t": "2026-06-30", "v": 46}, {"t": "2026-07-01", "v": 78}, {"t": "2026-07-02", "v": 51}, {"t": "2026-07-03", "v": 18}]}, "cross": {"both": 130, "only_att": 37979, "only_ofw": 1, "both_seg": [{"label": "매일형(주6~7)", "count": 94}, {"label": "주3~5회형", "count": 25}, {"label": "주1~2회형", "count": 6}, {"label": "산발형(<주1)", "count": 5}], "both_att_pct": 99.2}};
+const F = n => n.toLocaleString("ko-KR");
+const tt = document.getElementById("tt");
+function bind(el, html){
+  el.addEventListener("mousemove", e=>{tt.innerHTML=html;tt.style.left=e.clientX+"px";tt.style.top=e.clientY+"px";tt.style.opacity=1;});
+  el.addEventListener("mouseleave", ()=>{tt.style.opacity=0;});
+}
+// ---- horizontal bars ----
+function bars(elId, items, color, opts={}){
+  const el=document.getElementById(elId); el.innerHTML="";
+  const total=opts.total ?? items.reduce((s,d)=>s+d.count,0);
+  const max=Math.max(...items.map(d=>d.count),1);
+  items.forEach(d=>{
+    const pct=total? (d.count/total*100):0;
+    const r=document.createElement("div"); r.className="row";
+    const extra=opts.extra? opts.extra(d):"";
+    r.innerHTML=`<div class="lbl" title="${d.label}">${d.label}</div>
+      <div class="track"><div class="fill" style="width:${d.count/max*100}%;background:${color}"></div></div>
+      <div class="val">${F(d.count)}<span class="pct"> · ${pct.toFixed(1)}%${extra}</span></div>`;
+    bind(r, `<b>${d.label}</b><br>${F(d.count)}명 · ${pct.toFixed(1)}%${d._tt?"<br>"+d._tt:""}`);
+    el.appendChild(r);
+  });
+}
+// ---- line chart (SVG) ----
+function line(elId, pts, color, opts={}){
+  const el=document.getElementById(elId);
+  const W=640,H=190,P={l:38,r:14,t:12,b:26};
+  const xs=pts.map((_,i)=>i), ys=pts.map(p=>opts.y?opts.y(p):p.v);
+  const ymax=opts.ymax ?? Math.max(...ys,1);
+  const X=i=>P.l+(W-P.l-P.r)*(pts.length<2?.5:i/(pts.length-1));
+  const Y=v=>H-P.b-(H-P.t-P.b)*(v/ymax);
+  const d=pts.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(ys[i]).toFixed(1)}`).join(" ");
+  const area=`M${X(0)},${H-P.b} `+pts.map((p,i)=>`L${X(i).toFixed(1)},${Y(ys[i]).toFixed(1)}`).join(" ")+` L${X(pts.length-1)},${H-P.b} Z`;
+  const ticks=[0,.5,1].map(f=>Math.round(ymax*f));
+  let g="";
+  ticks.forEach(v=>{const y=Y(v);g+=`<line class="gridline" x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}"/><text class="ax" x="${P.l-6}" y="${y+3}" text-anchor="end">${F(v)}</text>`;});
+  const n=pts.length;
+  const xt=[0,Math.floor(n/2),n-1].filter((v,i,a)=>a.indexOf(v)===i);
+  let xg=xt.map(i=>`<text class="ax" x="${X(i)}" y="${H-8}" text-anchor="middle">${pts[i].t}</text>`).join("");
+  const uid="uid"+Math.abs(elId.split("").reduce((a,c)=>a+c.charCodeAt(0),0));
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img">
+    <defs><linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity=".22"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${g}<path d="${area}" fill="url(#${uid})"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${xg}<g id="${uid}h"></g></svg>`;
+  const svg=el.querySelector("svg"), hover=el.querySelector("#"+uid+"h");
+  svg.addEventListener("mousemove",e=>{
+    const r=svg.getBoundingClientRect(); const px=(e.clientX-r.left)/r.width*W;
+    let bi=0,bd=1e9; pts.forEach((p,i)=>{const dd=Math.abs(X(i)-px);if(dd<bd){bd=dd;bi=i;}});
+    const cx=X(bi),cy=Y(ys[bi]);
+    hover.innerHTML=`<line x1="${cx}" y1="${P.t}" x2="${cx}" y2="${H-P.b}" stroke="${color}" stroke-opacity=".4"/><circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="var(--surface)" stroke-width="2"/>`;
+    tt.innerHTML=`<b>${pts[bi].t}</b><br>${opts.tlabel||"값"}: ${F(ys[bi])}`;
+    tt.style.left=e.clientX+"px";tt.style.top=e.clientY+"px";tt.style.opacity=1;
+  });
+  svg.addEventListener("mouseleave",()=>{hover.innerHTML="";tt.style.opacity=0;});
+}
+// ---- pareto ----
+function pareto(elId,pts,color){
+  const el=document.getElementById(elId);
+  const W=640,H=190,P={l:40,r:14,t:12,b:28};
+  const X=x=>P.l+(W-P.l-P.r)*(x/100), Y=y=>H-P.b-(H-P.t-P.b)*(y/100);
+  const d=pts.map((p,i)=>`${i?"L":"M"}${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+  let g="";[0,25,50,75,100].forEach(v=>{const y=Y(v);g+=`<line class="gridline" x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}"/><text class="ax" x="${P.l-6}" y="${y+3}" text-anchor="end">${v}%</text>`;});
+  let xg="";[0,25,50,75,100].forEach(v=>xg+=`<text class="ax" x="${X(v)}" y="${H-8}" text-anchor="middle">${v}%</text>`);
+  const m=DATA.ofw.p_marks; let marks="";
+  [[10,m["0.1"]],[20,m["0.2"]],[50,m["0.5"]]].forEach(([x,y])=>{marks+=`<circle cx="${X(x)}" cy="${Y(y)}" r="4" fill="${color}" stroke="var(--surface)" stroke-width="2"/><text class="ax" x="${X(x)}" y="${Y(y)-8}" text-anchor="middle" fill="var(--ink)">${y}%</text>`;});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}"><text class="ax" x="${W-P.r}" y="${H-8}" text-anchor="end">유저 상위 %</text>${g}${xg}<path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${marks}</svg>`;
+}
+
+// ===== render =====
+const M=DATA.meta, A=DATA.att, O=DATA.ofw, C=DATA.cross;
+document.getElementById("meta").innerHTML=`데이터 ${M.start} ~ ${M.end} · 약 ${F(M.days)}일 · 적립 이벤트 ${F(M.events)}건 · 적립경험 회원 ${F(M.members)}명`;
+document.getElementById("tiles").innerHTML=`
+  <div class="tile accent-att"><div class="v">${F(A.users)}</div><div class="k">출석체크 사용 회원</div><div class="note">적립회원의 ${(A.users/M.members*100).toFixed(1)}%</div></div>
+  <div class="tile accent-att"><div class="v" style="color:var(--crit)">${A.oneshot_pct}%</div><div class="k">출석 1일 단발 비율</div><div class="note">${F(A.oneshot)}명 — 첫날 이후 미복귀</div></div>
+  <div class="tile accent-att"><div class="v">${F(A.daily_core)}</div><div class="k">데일리 코어(활성 ≤7일)</div><div class="note">실질 상시 사용층</div></div>
+  <div class="tile accent-ofw"><div class="v">${F(O.users)}</div><div class="k">오퍼월 사용 회원</div><div class="note">침투율 ${O.penetration}% · ${O.start}~ 신생</div></div>
+  <div class="tile accent-ofw"><div class="v">${O.p_marks["0.1"]}%</div><div class="k">상위 10% 포인트 집중</div><div class="note">${F(O.events)}건 · 총 ${F(Math.round(O.points))}P</div></div>
+  <div class="tile accent-ofw"><div class="v">${C.both_att_pct}%</div><div class="k">오퍼월 유저 중 출석 병행</div><div class="note">${F(C.both)}명 — 코어와 겹침</div></div>`;
+
+document.getElementById("att-insight").innerHTML=`출석체크는 <b>유입은 되지만 초기 리텐션이 문제</b>다. 사용회원 ${F(A.users)}명 중 <b>${A.oneshot_pct}%가 딱 1일만</b> 출석하고 이탈한다. 반대로 일주일 이상 정착하면 4명 중 1명은 매일형으로 굳는다 → <b>초기 3~7일 습관화 훅</b>이 핵심 레버.`;
+document.getElementById("ofw-insight").innerHTML=`오퍼월은 <b>${O.start} 시작한 신생 기능</b>으로 아직 <b>${F(O.users)}명(침투율 ${O.penetration}%)</b>만 사용한다. 게다가 <b>상위 10%(포인트 ${O.p_marks["0.1"]}%)</b>에 극단 집중. 대부분 회원에게는 사실상 노출/발견이 안 된 상태.`;
+
+bars("segAll", A.seg_all, "var(--att)");
+document.getElementById("settledCap").textContent=`관측기간 7일 이상 ${F(A.n_settled)}명 대상 — '어떤 주기로 쓰는가'의 실질 답`;
+bars("segSettled", A.seg_settled, "var(--att)", {total:A.n_settled});
+const recCol={"활성(≤7일)":"var(--good)","준활성(8~30일)":"var(--att)","휴면(31~90일)":"var(--muted)","이탈(>90일)":"var(--crit)"};
+(function(){const el=document.getElementById("recency");el.innerHTML="";const tot=A.recency.reduce((s,d)=>s+d.count,0);const max=Math.max(...A.recency.map(d=>d.count));
+  A.recency.forEach(d=>{const pct=d.count/tot*100;const r=document.createElement("div");r.className="row";
+  r.innerHTML=`<div class="lbl">${d.label}</div><div class="track"><div class="fill" style="width:${d.count/max*100}%;background:${recCol[d.label]}"></div></div><div class="val">${F(d.count)}<span class="pct"> · ${pct.toFixed(1)}%</span></div>`;
+  bind(r,`<b>${d.label}</b><br>${F(d.count)}명 · ${pct.toFixed(1)}%`);el.appendChild(r);});})();
+line("attTrend", A.trend, "var(--att)", {tlabel:"출석 이벤트"});
+
+O.usage_seg.forEach(d=>d._tt=`포인트 ${F(Math.round(d.points))}P (${(d.points/O.tot_p*100).toFixed(1)}%)`);
+bars("usageSeg", O.usage_seg, "var(--ofw)", {total:O.users, extra:d=>` · ${(d.points/O.tot_p*100).toFixed(0)}%P`});
+pareto("pareto", O.pareto, "var(--ofw)");
+document.getElementById("ofwCap").textContent=`${O.start} ~ ${O.end} · 1인당 평균 ${O.avg_cnt}회(중앙값 ${O.med_cnt}) / 평균 ${F(O.avg_pt)}P(최대 ${F(O.max_pt)}P)`;
+line("ofwTrend", O.trend, "var(--ofw)", {tlabel:"오퍼월 이벤트"});
+
+bars("cross", [{label:"둘 다 사용",count:C.both},{label:"출석만",count:C.only_att},{label:"오퍼월만",count:C.only_ofw}], "var(--att)");
+document.getElementById("crossCap").textContent=`오퍼월 유저 ${F(O.users)}명 중 ${C.both_att_pct}%가 출석도 사용 — 대부분 데일리 코어`;
+bars("crossSeg", C.both_seg, "var(--ofw)", {total:C.both});
+
+document.getElementById("foot").innerHTML=`<b>방법론</b> · 주기 세그먼트 = 회원별(순 출석일수 ÷ 관측주수)로 주당 출석일 산출, 관측 7일 미만은 '단기관측'으로 분리. 활성 = 데이터 최신시점 대비 최근 출석 경과일(≤7 활성/8~30 준활성/31~90 휴면/>90 이탈). 오퍼월 헤비 = 참여 10회+. · 데이터: Redash 쿼리 401 전량. 경계값 조정 가능. 회원 식별자·원자료는 대시보드에 포함하지 않음(집계만).`;
+
+// ===== 활성화 진단 섹션 =====
+const AC={"streak": {"users": 38109, "buckets": [{"label": "1일", "count": 32313}, {"label": "2~3일", "count": 2259}, {"label": "4~6일", "count": 448}, {"label": "7~13일", "count": 363}, {"label": "14~29일", "count": 474}, {"label": "30일+", "count": 2252}], "reach3": 3961, "reach7": 3089, "reach14": 2726, "reach30": 2252, "reach3_pct": 10.4, "reach7_pct": 8.1, "reach30_pct": 5.9, "current": 1308, "survival": [{"day": 1, "users": 38109, "pct": 100.0}, {"day": 2, "users": 5796, "pct": 15.2}, {"day": 3, "users": 3961, "pct": 10.4}, {"day": 4, "users": 3537, "pct": 9.3}, {"day": 5, "users": 3341, "pct": 8.8}, {"day": 6, "users": 3199, "pct": 8.4}, {"day": 7, "users": 3089, "pct": 8.1}, {"day": 8, "users": 3031, "pct": 8.0}, {"day": 9, "users": 2957, "pct": 7.8}, {"day": 10, "users": 2899, "pct": 7.6}, {"day": 11, "users": 2849, "pct": 7.5}, {"day": 12, "users": 2799, "pct": 7.3}, {"day": 13, "users": 2764, "pct": 7.3}, {"day": 14, "users": 2726, "pct": 7.2}, {"day": 15, "users": 2697, "pct": 7.1}, {"day": 16, "users": 2670, "pct": 7.0}, {"day": 17, "users": 2630, "pct": 6.9}, {"day": 18, "users": 2595, "pct": 6.8}, {"day": 19, "users": 2564, "pct": 6.7}, {"day": 20, "users": 2531, "pct": 6.6}, {"day": 21, "users": 2496, "pct": 6.5}, {"day": 22, "users": 2462, "pct": 6.5}, {"day": 23, "users": 2445, "pct": 6.4}, {"day": 24, "users": 2417, "pct": 6.3}, {"day": 25, "users": 2393, "pct": 6.3}, {"day": 26, "users": 2366, "pct": 6.2}, {"day": 27, "users": 2334, "pct": 6.1}, {"day": 28, "users": 2301, "pct": 6.0}, {"day": 29, "users": 2279, "pct": 6.0}, {"day": 30, "users": 2252, "pct": 5.9}], "cont": [{"day": 1, "pct": 15.2}, {"day": 2, "pct": 68.3}, {"day": 3, "pct": 89.3}, {"day": 4, "pct": 94.5}, {"day": 5, "pct": 95.7}, {"day": 6, "pct": 96.6}, {"day": 7, "pct": 98.1}, {"day": 8, "pct": 97.6}, {"day": 9, "pct": 98.0}, {"day": 10, "pct": 98.3}, {"day": 11, "pct": 98.2}, {"day": 12, "pct": 98.7}, {"day": 13, "pct": 98.6}, {"day": 14, "pct": 98.9}]}, "retention": {"cohort": 37823, "any": 27.0, "d1": 11.5, "d7": 7.9, "d30": 7.2, "curve": [{"day": 0, "pct": 100.0}, {"day": 1, "pct": 11.5}, {"day": 2, "pct": 9.3}, {"day": 3, "pct": 8.6}, {"day": 4, "pct": 8.3}, {"day": 5, "pct": 7.9}, {"day": 6, "pct": 7.7}, {"day": 7, "pct": 7.9}, {"day": 8, "pct": 7.6}, {"day": 9, "pct": 7.4}, {"day": 10, "pct": 7.3}, {"day": 11, "pct": 7.2}, {"day": 12, "pct": 7.2}, {"day": 13, "pct": 7.3}, {"day": 14, "pct": 7.3}, {"day": 15, "pct": 7.2}, {"day": 16, "pct": 7.1}, {"day": 17, "pct": 7.1}, {"day": 18, "pct": 7.1}, {"day": 19, "pct": 7.1}, {"day": 20, "pct": 7.1}, {"day": 21, "pct": 7.1}, {"day": 22, "pct": 7.1}, {"day": 23, "pct": 7.0}, {"day": 24, "pct": 7.0}, {"day": 25, "pct": 7.0}, {"day": 26, "pct": 6.9}, {"day": 27, "pct": 6.9}, {"day": 28, "pct": 8.5}, {"day": 29, "pct": 7.5}, {"day": 30, "pct": 7.2}]}, "growth": [{"ym": "2024-11", "new": 84, "mau": 3730, "att_mau": 2098}, {"ym": "2024-12", "new": 2047, "mau": 9654, "att_mau": 4388}, {"ym": "2025-01", "new": 5184, "mau": 6276, "att_mau": 1988}, {"ym": "2025-02", "new": 4477, "mau": 5344, "att_mau": 1539}, {"ym": "2025-03", "new": 7458, "mau": 8625, "att_mau": 2576}, {"ym": "2025-04", "new": 7922, "mau": 9417, "att_mau": 3543}, {"ym": "2025-05", "new": 6867, "mau": 9391, "att_mau": 3367}, {"ym": "2025-06", "new": 11486, "mau": 14091, "att_mau": 3310}, {"ym": "2025-07", "new": 8728, "mau": 10507, "att_mau": 1852}, {"ym": "2025-08", "new": 10145, "mau": 11857, "att_mau": 1991}, {"ym": "2025-09", "new": 9515, "mau": 11823, "att_mau": 1996}, {"ym": "2025-10", "new": 742, "mau": 3289, "att_mau": 1597}, {"ym": "2025-11", "new": 2063, "mau": 18968, "att_mau": 2648}, {"ym": "2025-12", "new": 6999, "mau": 49034, "att_mau": 13563}, {"ym": "2026-01", "new": 0, "mau": 8523, "att_mau": 6127}, {"ym": "2026-02", "new": 0, "mau": 3490, "att_mau": 3382}, {"ym": "2026-03", "new": 0, "mau": 2980, "att_mau": 2937}, {"ym": "2026-04", "new": 0, "mau": 2751, "att_mau": 2740}, {"ym": "2026-05", "new": 0, "mau": 2693, "att_mau": 2647}, {"ym": "2026-06", "new": 0, "mau": 2232, "att_mau": 2197}, {"ym": "2026-07", "new": 0, "mau": 1416, "att_mau": 1416}], "adopt": [{"label": "고향사랑기부 이벤트", "count": 52704, "pct": 33.0}, {"label": "출석체크", "count": 38109, "pct": 23.9}, {"label": "맞춤정보 입력", "count": 26952, "pct": 16.9}, {"label": "초대(친구)", "count": 15381, "pct": 9.6}, {"label": "게임/이벤트(럭키볼 등)", "count": 7423, "pct": 4.6}, {"label": "커뮤니티 참여", "count": 2099, "pct": 1.3}, {"label": "오퍼월(광고)", "count": 131, "pct": 0.1}], "total": 159768, "depth": [{"label": "1일(단발)", "count": 137467}, {"label": "2~3일", "count": 16433}, {"label": "4~9일", "count": 2170}, {"label": "10~29일", "count": 767}, {"label": "30일+", "count": 2931}]};
+document.getElementById("act-insight").innerHTML=`습관화의 급소는 <b>Day1→Day2</b>. 출석 첫날 이후 다음날 다시 오는 비율이 <b>${AC.streak.cont[0].pct}%</b>뿐이지만, <b>3일만 넘기면 94%+</b>가 계속 온다. 견고한 코어(30일+ 연속 ${F(AC.streak.reach30)}명 · 현재 진행중 streak ${F(AC.streak.current)}명)는 있으나 <b>월 활동회원(MAU)은 감소세</b>. → 초기 3일 습관화가 최우선 레버.`;
+document.getElementById("act-tiles").innerHTML=`
+  <div class="tile accent-att"><div class="v" style="color:var(--crit)">${AC.streak.cont[0].pct}%</div><div class="k">Day1→2 지속률 (급소)</div><div class="note">3일차부터 94%+ 자동 지속</div></div>
+  <div class="tile accent-att"><div class="v">${AC.streak.reach3_pct}%</div><div class="k">3일+ 연속 달성</div><div class="note">${F(AC.streak.reach3)}명</div></div>
+  <div class="tile accent-att"><div class="v">${AC.streak.reach30_pct}%</div><div class="k">30일+ 연속 (코어)</div><div class="note">현재 streak ${F(AC.streak.current)}명 진행중</div></div>
+  <div class="tile accent-att"><div class="v">${AC.retention.d30}%</div><div class="k">D30 리텐션</div><div class="note">D1 ${AC.retention.d1}% → D7 ${AC.retention.d7}% → 평탄화</div></div>`;
+line("survival", AC.streak.survival.map(d=>({t:"D"+d.day, v:d.pct})), "var(--att)", {ymax:100, tlabel:"달성률(%)"});
+bars("streakBuckets", AC.streak.buckets, "var(--att)");
+document.getElementById("retCap").textContent=`첫 출석 코호트 ${F(AC.retention.cohort)}명(관측30일+) · 재방문 ${AC.retention.any}%`;
+line("retention", AC.retention.curve.map(d=>({t:"D"+d.day, v:d.pct})), "var(--att)", {ymax:Math.max.apply(null,AC.retention.curve.map(d=>d.pct)), tlabel:"활동률(%)"});
+line("mau", AC.growth.map(d=>({t:d.ym.slice(2), v:d.mau})), "var(--att)", {tlabel:"MAU"});
+document.getElementById("adoptCap").textContent=`전체 적립회원 ${F(AC.total)}명 대비 기능별 도달`;
+bars("adopt", AC.adopt, "var(--att)", {total:AC.total});
+bars("depth", AC.depth, "var(--att)", {total:AC.total});
+
+// theme toggle
+document.getElementById("themeBtn").onclick=()=>{
+  const r=document.documentElement;
+  const cur=r.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  r.setAttribute("data-theme", cur==="dark"?"light":"dark");
+};
+</script>
+</body>
+</html>
